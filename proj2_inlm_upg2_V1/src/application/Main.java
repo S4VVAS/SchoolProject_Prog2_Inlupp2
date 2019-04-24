@@ -98,12 +98,12 @@ public class Main extends Application {
 		
 		// CENTER-------------------------------------
 		image = new ImageView();
-		image.isPreserveRatio();
 		
 		mapHolder = new Pane();
 		mapHolder.getChildren().add(image);
 		
 		root.setCenter(new ScrollPane(mapHolder));
+		((ScrollPane)root.getCenter()).setPadding(inset);
 		// RIGHT--------------------------------------
 		categories = FXCollections.observableArrayList("Bus", "Underground", "Train");
 		list = new ListView<String>(categories);
