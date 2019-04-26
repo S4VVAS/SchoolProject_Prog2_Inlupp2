@@ -157,45 +157,35 @@ public class Main extends Application {
 	}
 
 	class CreateLocation implements EventHandler<ActionEvent> {
-
 		Place newPlace;
 
 		@Override
 		public void handle(ActionEvent event) {
 			if (namedPlace.isSelected()) {
-				mapHolder.setOnMouseClicked(e -> {
-					CreateNamed named = new CreateNamed();
-					newPlace = named.getPlace();
-					createNamed();
+				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
+					@Override
+					public void handle(MouseEvent event) {
+						newPlace = new NamedPlace("bus", event.getX(), event.getY());
+						storePlace();
+					}
 				});
-				
 			}
 
 			else if (describedPlace.isSelected()) {
-				mapHolder.setOnMouseClicked(e -> {
-					CreateDescribed described = new CreateDescribed();
-					newPlace = described.getPlace();
-					createDescribed();
+				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
+					@Override
+					public void handle(MouseEvent event) {
+						newPlace = new DescribedPlace("bus", "sfd", event.getX(), event.getY(), "sdf");
+						storePlace();
+					}
 				});
 			}
-		}
-
-		private void createNamed() {
-			System.out.println("named");
-			storePlace();
-			mapHolder.setOnMouseClicked(null);
-		}
-
-		private void createDescribed() {
-			System.out.println("desc");
-			storePlace();
-			mapHolder.setOnMouseClicked(null);
 		}
 
 		private void storePlace() {
 			searchPos.put(newPlace.getPos(), newPlace);
 			mapHolder.getChildren().add(newPlace.getMarker());
-			mapHolder.setOnMousePressed(null);
+			mapHolder.setOnMouseClicked(null);
 		}
 	}
 
