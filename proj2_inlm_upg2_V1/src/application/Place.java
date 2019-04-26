@@ -5,15 +5,14 @@ import javafx.scene.shape.Polygon;
 
 public abstract class Place {
 
-	private double xCord, yCord;
+	private Position pos;
 	private String name, category;
 	private Polygon marker;
 
 	public Place(String name, String category, double x, double y) {
 		this.name = name;
 		this.category = category;
-		xCord = x;
-		yCord = y;
+		pos = new Position(x,y);
 
 		switch (category.toUpperCase()) {
 		case "BUS":
@@ -32,8 +31,7 @@ public abstract class Place {
 
 	public Place(String name, double x, double y) {
 		this.name = name;
-		xCord = x;
-		yCord = y;
+		pos = new Position(x,y);
 
 		setupMarker(Color.BLACK);
 	}
@@ -42,9 +40,9 @@ public abstract class Place {
 		marker = new Polygon();
 		marker.getPoints().addAll(new Double[] { 0.0, 0.0, -10.0, -20.0, 10.0, -20.0 });
 		marker.setFill(color);
-		marker.relocate(xCord-10, yCord-20);
+		marker.relocate(getX()-10, getY()-20);
 	}
-
+	
 	public String getName() {
 		return name;
 	}
@@ -58,11 +56,15 @@ public abstract class Place {
 	}
 	
 	public double getX() {
-		return xCord;
+		return pos.getX();
 	}
 	
 	public double getY() {
-		return yCord;
+		return pos.getY();
+	}
+	
+	public Position getPos() {
+		return pos;
 	}
 
 }
