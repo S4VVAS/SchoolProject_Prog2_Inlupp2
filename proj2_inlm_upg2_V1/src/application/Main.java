@@ -157,32 +157,44 @@ public class Main extends Application {
 	}
 
 	class CreateLocation implements EventHandler<ActionEvent> {
+
+		Place newPlace;
+
 		@Override
 		public void handle(ActionEvent event) {
-			if (namedPlace.isSelected())
-				mapHolder.setOnMousePressed(e -> createNamed());
-			else if (describedPlace.isSelected())
-				mapHolder.setOnMousePressed(e -> createDescribed());
+			if (namedPlace.isSelected()) {
+				mapHolder.setOnMouseClicked(e -> {
+					CreateNamed named = new CreateNamed();
+					newPlace = named.getPlace();
+					createNamed();
+				});
+				
+			}
+
+			else if (describedPlace.isSelected()) {
+				mapHolder.setOnMouseClicked(e -> {
+					CreateDescribed described = new CreateDescribed();
+					newPlace = described.getPlace();
+					createDescribed();
+				});
+			}
 		}
 
 		private void createNamed() {
 			System.out.println("named");
-			CreateNamed namedPlace = new CreateNamed();
-			//storePlace(namedPlace.getPlace(), namedPlace.getPos());
-			mapHolder.setOnMousePressed(null);
+			storePlace();
+			mapHolder.setOnMouseClicked(null);
 		}
-		
+
 		private void createDescribed() {
 			System.out.println("desc");
-			CreateDescribed descPlace = new CreateDescribed();
-			
-			storePlace(descPlace.getPlace(), descPlace.getPos());
-			mapHolder.setOnMousePressed(null);
+			storePlace();
+			mapHolder.setOnMouseClicked(null);
 		}
-	
-		private void storePlace(Place place, Position pos) {
-			searchPos.put(pos, place);
-			mapHolder.getChildren().add(place.getMarker());
+
+		private void storePlace() {
+			searchPos.put(newPlace.getPos(), newPlace);
+			mapHolder.getChildren().add(newPlace.getMarker());
 			mapHolder.setOnMousePressed(null);
 		}
 	}
