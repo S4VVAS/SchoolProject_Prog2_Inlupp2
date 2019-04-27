@@ -37,7 +37,7 @@ public class Main extends Application {
 
 	Stage primaryStage;
 	BorderPane root;
-	Button create, searchBtn, hide, remove, coordinates, hideCategory;
+	Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn;
 	RadioButton namedPlace, describedPlace;
 	TextField textSearch;
 	ImageView image;
@@ -48,7 +48,7 @@ public class Main extends Application {
 	Image map;
 	Pane mapHolder;
 
-	HashMap<Position, Place> searchPos = new HashMap<Position, Place>();
+	HashMap<Position, Place> searchMapPos = new HashMap<Position, Place>();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -65,11 +65,11 @@ public class Main extends Application {
 		// TOP
 		root = new BorderPane();
 
-		create = new Button("New");
+		createBtn = new Button("New");
 		searchBtn = new Button("Search");
-		hide = new Button("Hide");
-		remove = new Button("Remove");
-		coordinates = new Button("Coordinates");
+		hideBtn = new Button("Hide");
+		removeBtn = new Button("Remove");
+		coordinatesBtn = new Button("Coordinates");
 		textSearch = new TextField();
 
 		namedPlace = new RadioButton("Named");
@@ -110,7 +110,8 @@ public class Main extends Application {
 		CategoryPane.setSpacing(5);
 
 		CategoryPane.getChildren().addAll(namedPlace, describedPlace);
-		topPane.getChildren().addAll(create, CategoryPane, textSearch, searchBtn, hide, remove, coordinates);
+		topPane.getChildren().addAll(createBtn, CategoryPane, textSearch, searchBtn, hideBtn, removeBtn,
+				coordinatesBtn);
 
 		VBox topLayout = new VBox();
 		topLayout.getChildren().addAll(menuBar, topPane);
@@ -137,7 +138,7 @@ public class Main extends Application {
 
 	private void setupHandlers() {
 		loadMap.setOnAction(new LoadNewMap());
-		create.setOnAction(new CreateLocation());
+		createBtn.setOnAction(new CreateLocation());
 
 	}
 
@@ -151,13 +152,13 @@ public class Main extends Application {
 			if (choosenFile != null) {
 				map = new Image("file:" + choosenFile.getAbsolutePath());
 				image.setImage(map);
-
 			}
 		}
 	}
 
 	class CreateLocation implements EventHandler<ActionEvent> {
 		Place newPlace;
+		String category, name, description;
 
 		@Override
 		public void handle(ActionEvent event) {
@@ -165,7 +166,7 @@ public class Main extends Application {
 				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
 					@Override
 					public void handle(MouseEvent event) {
-						newPlace = new NamedPlace("bus", event.getX(), event.getY());
+						newPlace = new NamedPlace("underground", "ddd", event.getX(), event.getY());
 						storePlace();
 					}
 				});
@@ -183,7 +184,7 @@ public class Main extends Application {
 		}
 
 		private void storePlace() {
-			searchPos.put(newPlace.getPos(), newPlace);
+			searchMapPos.put(newPlace.getPos(), newPlace);
 			mapHolder.getChildren().add(newPlace.getMarker());
 			mapHolder.setOnMouseClicked(null);
 		}
