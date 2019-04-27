@@ -3,7 +3,7 @@ package application;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Polygon;
 
-public abstract class Place {
+public abstract class Place{
 
 	private Position pos;
 	private String name, category;

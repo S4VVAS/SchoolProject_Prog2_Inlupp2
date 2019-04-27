@@ -176,12 +176,13 @@ public class Main extends Application {
 
 		@Override
 		public void handle(ActionEvent event) {
+			mapHolder.setCursor(Cursor.CROSSHAIR);
+			
 			if (namedPlace.isSelected()) {
 				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
 					@Override
 					public void handle(MouseEvent event) {
-						newPlace = new NamedPlace("underground", "ddd", event.getX(), event.getY());
-						storePlace();
+						createNamed(event.getX(), event.getY());
 					}
 				});
 			}
@@ -195,16 +196,14 @@ public class Main extends Application {
 				});
 			}
 		}
-
-		private void storePlace() {
-			searchMapPos.put(Double.toString(newPlace.getX()) + " " + Double.toString(newPlace.getY()),
-					newPlace.getPos());
-			mapHolder.getChildren().add(newPlace.getMarker());
-			mapHolder.setOnMouseClicked(null);
-		}
 		
-		private void createNamed() {
-			
+		private void createNamed(double x, double y) {
+			CreateNamedPlace named = new CreateNamedPlace(x, y);
+			Optional<ButtonType> anwser = named.showAndWait();
+			if(anwser.isPresent() && anwser.get() == ButtonType.OK) {
+				newPlace = new NamedPlace(named.getCategory(), named.getName(), x, y);
+				storePlace();
+			}
 		}
 		
 		private void createDescribed(double x, double y) {
@@ -215,6 +214,16 @@ public class Main extends Application {
 				storePlace();
 			}
 		}
+		
+		private void storePlace() {
+			searchMapPos.put(Double.toString(newPlace.getX()) + " " + Double.toString(newPlace.getY()),
+					newPlace.getPos());
+			mapHolder.getChildren().add(newPlace.getMarker());
+			
+			mapHolder.setOnMouseClicked(null);
+			mapHolder.setCursor(Cursor.DEFAULT);
+		}
+		
 	}
 
 	public static void main(String[] args) {

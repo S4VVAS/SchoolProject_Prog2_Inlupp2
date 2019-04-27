@@ -1,6 +1,6 @@
 package application;
 
-
+import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
@@ -8,13 +8,13 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-public class CreateDescribedPlace extends PopUp {
+public class CreateNamedPlace extends PopUp{
 
 	RadioButton bus, train, underground;
-	TextField name, description;
+	TextField name;
 	double x, y;
 
-	public CreateDescribedPlace(double x, double y) {
+	public CreateNamedPlace(double x, double y) {
 		super();
 		this.x = x;
 		this.y = y;
@@ -27,9 +27,6 @@ public class CreateDescribedPlace extends PopUp {
 		name = new TextField();
 		name.setPromptText("name the place");
 
-		description = new TextField();
-		description.setPromptText("describe the place");
-
 		ToggleGroup group = new ToggleGroup();
 		bus = new RadioButton();
 		train = new RadioButton();
@@ -40,24 +37,18 @@ public class CreateDescribedPlace extends PopUp {
 		underground.setToggleGroup(group);
 
 		root.add(new Label("Name: "), 0, 0);
-		root.add(name, 1, 0);
-		root.add(new Label("Description: "), 0, 1);
-		root.add(description, 1, 1);
+		root.add(name, 0, 0);
 
 		HBox categoryBox = new HBox(new VBox(bus, new Label("Bus")), new VBox(train, new Label("Train")),
 				new VBox(underground, new Label("Underground")));
 		categoryBox.setSpacing(20);
 
-		root.add(categoryBox, 0, 2);
+		root.add(categoryBox, 0, 1);
 
 	}
 
 	public String getName() {
 		return name.getText();
-	}
-
-	public String getDescription() {
-		return description.getText();
 	}
 
 	public String getCategory() {
@@ -69,5 +60,5 @@ public class CreateDescribedPlace extends PopUp {
 			return "underground";
 		return "";
 	}
-
+	
 }
