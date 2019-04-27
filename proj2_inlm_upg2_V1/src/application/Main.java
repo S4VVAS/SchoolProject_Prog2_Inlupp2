@@ -2,9 +2,9 @@ package application;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.Optional;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -13,8 +13,10 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
@@ -48,7 +50,7 @@ public class Main extends Application {
 	Image map;
 	Pane mapHolder;
 
-	HashMap<Position, Place> searchMapPos = new HashMap<Position, Place>();
+	HashMap<String, Position> searchMapPos = new HashMap<String, Position>();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -141,6 +143,17 @@ public class Main extends Application {
 		createBtn.setOnAction(new CreateLocation());
 
 	}
+	
+	private void refreshMap() {
+		mapHolder.getChildren().clear();
+		mapHolder.getChildren().add(image);
+		/*
+		Set<Map.Entry<String, Position>> setOfPos = searchMapPos.entrySet();
+		for(Entry<String, Position> entry: setOfPos) {
+			mapHolder.getChildren().add(entry.getValue().getPlace().getMarker());
+		}*/
+		
+	}
 
 	class LoadNewMap implements EventHandler<ActionEvent> {
 		@Override
@@ -152,6 +165,7 @@ public class Main extends Application {
 			if (choosenFile != null) {
 				map = new Image("file:" + choosenFile.getAbsolutePath());
 				image.setImage(map);
+				refreshMap();
 			}
 		}
 	}
@@ -176,17 +190,30 @@ public class Main extends Application {
 				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
 					@Override
 					public void handle(MouseEvent event) {
-						newPlace = new DescribedPlace("bus", "sfd", event.getX(), event.getY(), "sdf");
-						storePlace();
+						createDescribed(event.getX(), event.getY());
 					}
 				});
 			}
 		}
 
 		private void storePlace() {
-			searchMapPos.put(newPlace.getPos(), newPlace);
+			searchMapPos.put(Double.toString(newPlace.getX()) + " " + Double.toString(newPlace.getY()),
+					newPlace.getPos());
 			mapHolder.getChildren().add(newPlace.getMarker());
 			mapHolder.setOnMouseClicked(null);
+		}
+		
+		private void createNamed() {
+			
+		}
+		
+		private void createDescribed(double x, double y) {
+			CreateDescribedPlace described = new CreateDescribedPlace(x, y);
+			Optional<ButtonType> anwser = described.showAndWait();
+			if(anwser.isPresent() && anwser.get() == ButtonType.OK) {
+				newPlace = new DescribedPlace(described.getCategory(), described.getName(), x, y, described.getDescription());
+				storePlace();
+			}
 		}
 	}
 
