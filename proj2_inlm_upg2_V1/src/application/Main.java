@@ -109,6 +109,8 @@ public class Main extends Application {
 		namedPlace.setToggleGroup(group);
 		describedPlace.setToggleGroup(group);
 
+		namedPlace.setSelected(true);
+
 		Menu menu = new Menu("File", null, loadMap, loadPlaces, new SeparatorMenuItem(), save, new SeparatorMenuItem(),
 				exit);
 		menuBar.getMenus().add(menu);
@@ -153,8 +155,15 @@ public class Main extends Application {
 
 		searchBtn.setOnAction(new SearchPlace());
 
+		hideBtn.setOnAction(new HidePlace());
+
 		removeBtn.setOnAction(new RemovePlace());
 
+		coordinatesBtn.setOnAction(new SearchCoordinates());
+
+		hideCategoryBtn.setOnAction(new HideCategory());
+		
+		list.setOnMouseClicked(new ShowCategory());
 	}
 
 	private void refreshMap() {
@@ -169,12 +178,10 @@ public class Main extends Application {
 	}
 
 	private void storePlace(Place newPlace) {
-		if (!searchName.containsKey(newPlace.getName()))
-			searchName.put(newPlace.getName(), new HashSet<Place>());
+		searchName.putIfAbsent(newPlace.getName(), new HashSet<Place>());
 		searchName.get(newPlace.getName()).add(newPlace);
 
-		if (!searchCategory.containsKey(newPlace.getCategory()))
-			searchCategory.put(newPlace.getCategory(), new HashSet<Place>());
+		searchCategory.putIfAbsent(newPlace.getCategory(), new HashSet<Place>());
 		searchCategory.get(newPlace.getCategory()).add(newPlace);
 
 		searchMarked.add(newPlace);
@@ -185,10 +192,10 @@ public class Main extends Application {
 	}
 
 	private void unmarkAll() {
-		for(Place p: searchMarked)
+		for (Place p : searchMarked)
 			p.setMarkedProperty(false);
 	}
-	
+
 	class LoadNewMap implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
@@ -216,8 +223,26 @@ public class Main extends Application {
 
 		private void showResults() {
 			for (Place p : results)
-				if(p.getName().equals(textSearch.getText())) 
+				if (p.getName().equals(textSearch.getText())) {
 					p.setMarkedProperty(true);
+					p.setVisible(true);
+				}
+		}
+	}
+
+	//can be made to lamda
+	class HidePlace implements EventHandler<ActionEvent> {
+		@Override
+		public void handle(ActionEvent event) {
+			hideMarked();
+		}
+
+		private void hideMarked() {
+			for (Place p : searchMarked)
+				if (p.isMarked()) {
+					p.setVisible(false);
+					p.setMarkedProperty(false);
+				}
 		}
 	}
 
@@ -240,12 +265,12 @@ public class Main extends Application {
 				searchName.get(p.getName()).remove(p);
 			else
 				searchName.remove(p.getName());
-			
+
 			if (searchCategory.get(p.getCategory()).size() > 1)
 				searchCategory.get(p.getCategory()).remove(p);
 			else
 				searchCategory.remove(p.getCategory());
-			
+
 			searchPos.remove(p.getPos().getKey());
 			searchMarked.remove(p);
 
@@ -253,6 +278,65 @@ public class Main extends Application {
 		}
 	}
 
+	class SearchCoordinates implements EventHandler<ActionEvent> {
+
+		public void handle(ActionEvent event) {
+			SearchCoordsWindow search = new SearchCoordsWindow();
+			Optional<ButtonType> anwser = search.showAndWait();
+			if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
+				try {
+					if (Double.parseDouble(search.getXCord()) >= 0 && Double.parseDouble(search.getYCord()) >= 0) {
+						if (searchPos.get(search.getXCord() + search.getYCord()) != null) {
+							unmarkAll();
+							Place p = searchPos.get(search.getXCord() + search.getYCord()).getPlace();
+							p.setMarkedProperty(true);
+							p.setVisible(true);
+						} else
+							noPlaceError();
+					} else
+						negativeNumError();
+				} catch (NumberFormatException e) {
+					formatError();
+				}
+			}
+		}
+
+		private void noPlaceError() {
+			new Alert(AlertType.ERROR, "Place not found!").showAndWait();
+		}
+
+		private void formatError() {
+			new Alert(AlertType.ERROR, "Wrong input! Numbers only").showAndWait();
+		}
+
+		private void negativeNumError() {
+			new Alert(AlertType.ERROR, "Wrong input! Positive coordinates only").showAndWait();
+		}
+	}
+
+	//can be made to lambda
+	class HideCategory implements EventHandler<ActionEvent> {
+		public void handle(ActionEvent event) {
+			for (Place p : searchCategory.get(getSelectedCategory())) {
+				p.setVisible(false);
+				p.setMarkedProperty(false);
+			}
+		}
+	}
+	
+	//probs better solution than mouseEvent
+	class ShowCategory implements EventHandler<MouseEvent> {
+		public void handle(MouseEvent event) {
+			unmarkAll();
+			try {
+			for (Place p : searchCategory.get(getSelectedCategory())) {
+				p.setVisible(true);
+				p.setMarkedProperty(true);
+			}
+			}catch(NullPointerException e) {}
+		}
+	}
+	
 	class CreateLocation implements EventHandler<ActionEvent> {
 		Place newPlace;
 		String category, name, description;

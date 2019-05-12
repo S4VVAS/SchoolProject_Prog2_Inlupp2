@@ -40,6 +40,7 @@ public abstract class Place extends Polygon {
 			color = Color.BLACK;
 			markedColor = Color.DIMGRAY;
 			setupMarker();
+			
 		}
 	}
 
