@@ -13,7 +13,7 @@ public class CreateNamedPlace extends PopUp {
 
 	@Override
 	void createWindow(double x, double y) {
-		setTitle("Create a described place at: X " + Double.toString(x) + " Y " + Double.toString(y));
+		setTitle("Create Named: X " + Double.toString(x) + " Y " + Double.toString(y));
 		setHeaderText(null);
 		name = new TextField();
 		name.setPromptText("name the place");
