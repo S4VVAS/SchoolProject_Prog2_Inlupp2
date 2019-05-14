@@ -1,5 +1,6 @@
 package application;
 
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.EventHandler;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -9,16 +10,16 @@ import javafx.scene.shape.Polygon;
 public abstract class Place extends Polygon {
 
 	protected final Position pos;
-	protected final String name;
-	protected final String category;
-	private boolean isMarked = true;
+	protected final String name, category;
 	private final Color color, markedColor;
+	private SimpleBooleanProperty isMarked = new SimpleBooleanProperty();
 
 	public Place(String name, String category, double x, double y) {
 		this.name = name;
 		this.category = category;
 		pos = new Position(x, y, this);
 		this.setOnMouseClicked(new MarkerEvent());
+		isMarked.set(true);
 
 		switch (category.toUpperCase()) {
 		case "BUS":
@@ -52,7 +53,7 @@ public abstract class Place extends Polygon {
 	}
 
 	private void setMarkedProperty() {
-		if (isMarked) {
+		if (isMarked.getValue()) {
 			relocate(getX() - 10, getY() - 23);
 			setStroke(Color.BLACK);
 			setFill(markedColor);
@@ -83,13 +84,17 @@ public abstract class Place extends Polygon {
 	public Position getPos() {
 		return pos;
 	}
+	
+	public SimpleBooleanProperty getBool() {
+		return isMarked;
+	}
 
 	public boolean isMarked() {
-		return isMarked;
+		return isMarked.getValue();
 	}
 	
 	public void setMarkedProperty(boolean bool) {
-		isMarked = bool;
+		isMarked.set(bool);
 		setMarkedProperty();
 	}
 
@@ -97,7 +102,7 @@ public abstract class Place extends Polygon {
 		@Override
 		public void handle(MouseEvent event) {
 			if (event.getButton() == MouseButton.PRIMARY) {
-				isMarked = !isMarked;
+				isMarked.set(!isMarked.getValue());
 				setMarkedProperty();
 			} else if (event.getButton() == MouseButton.SECONDARY) {
 				showPlaceDescription();
@@ -108,5 +113,8 @@ public abstract class Place extends Polygon {
 	}
 
 	abstract void showPlaceDescription();
+	
+	@Override
+	public abstract String toString();
 
 }

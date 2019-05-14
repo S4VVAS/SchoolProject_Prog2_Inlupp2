@@ -28,5 +28,8 @@ public class Position {
 	public String getKey() {
 		return key;
 	}
-
+	
+	public boolean equals(double x, double y) {
+		return xCord == x && yCord == y ? true : false;
+	}
 }

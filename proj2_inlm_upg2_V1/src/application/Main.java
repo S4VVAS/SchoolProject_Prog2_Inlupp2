@@ -1,6 +1,9 @@
 package application;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -42,23 +45,24 @@ import javafx.scene.layout.VBox;
 
 public class Main extends Application {
 
-	Stage primaryStage;
-	BorderPane root;
-	Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn;
-	RadioButton namedPlace, describedPlace;
-	TextField textSearch;
-	ImageView image;
-	ListView<String> list;
-	ObservableList<String> categories;
-	MenuBar menuBar;
-	MenuItem loadMap, loadPlaces, save, exit;
-	Image map;
-	Pane mapHolder;
+	private Stage primaryStage;
+	private BorderPane root;
+	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn;
+	private RadioButton namedPlace, describedPlace;
+	private TextField textSearch;
+	private ImageView image;
+	private ListView<String> list;
+	private ObservableList<String> categories;
+	private MenuBar menuBar;
+	private MenuItem loadMap, loadPlaces, save, exit;
+	private Image map;
+	private Pane mapHolder;
+	private boolean hasChanged = false;
 
-	HashMap<String, Position> searchPos = new HashMap<>();
-	TreeMap<String, HashSet<Place>> searchName = new TreeMap<>();
-	HashSet<Place> searchMarked = new HashSet<>();
-	TreeMap<String, HashSet<Place>> searchCategory = new TreeMap<>();
+	private HashMap<String, Position> searchPos = new HashMap<>();
+	private TreeMap<String, HashSet<Place>> searchName = new TreeMap<>();
+	private TreeMap<String, HashSet<Place>> searchCategory = new TreeMap<>();
+	private HashSet<Place> allMarked = new HashSet<>();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -150,6 +154,7 @@ public class Main extends Application {
 
 	private void setupHandlers() {
 		loadMap.setOnAction(new LoadNewMap());
+		loadPlaces.setOnAction(new LoadPlaces());
 
 		createBtn.setOnAction(new CreateLocation());
 
@@ -162,29 +167,40 @@ public class Main extends Application {
 		coordinatesBtn.setOnAction(new SearchCoordinates());
 
 		hideCategoryBtn.setOnAction(new HideCategory());
-		
+
 		list.setOnMouseClicked(new ShowCategory());
 	}
 
 	private void refreshMap() {
 		mapHolder.getChildren().clear();
 		mapHolder.getChildren().add(image);
+
+		for (Place p : allMarked) {
+			mapHolder.getChildren().add(p);
+		}
 	}
 
 	private String getSelectedCategory() {
 		if (list.getSelectionModel().getSelectedItem() == null)
-			return "";
+			return "None";
 		return list.getSelectionModel().getSelectedItem();
 	}
 
 	private void storePlace(Place newPlace) {
+		allMarked.add(newPlace);
+		newPlace.getBool().addListener((observable, oldValue, newValue) -> {
+			if (newValue == true) {
+				allMarked.add(newPlace);
+			} else if (newValue == false) {
+				allMarked.remove(newPlace);
+			}
+		});
+
 		searchName.putIfAbsent(newPlace.getName(), new HashSet<Place>());
 		searchName.get(newPlace.getName()).add(newPlace);
 
 		searchCategory.putIfAbsent(newPlace.getCategory(), new HashSet<Place>());
 		searchCategory.get(newPlace.getCategory()).add(newPlace);
-
-		searchMarked.add(newPlace);
 
 		searchPos.put(newPlace.getPos().getKey(), newPlace.getPos());
 
@@ -192,22 +208,109 @@ public class Main extends Application {
 	}
 
 	private void unmarkAll() {
-		for (Place p : searchMarked)
-			p.setMarkedProperty(false);
+		Iterator<Place> iterator = allMarked.iterator();
+		while (iterator.hasNext()) {
+			Place p = iterator.next();
+			if (p.isMarked()) {
+				iterator.remove();
+				p.setMarkedProperty(false);
+			}
+		}
+	}
+
+	private void removeAll() {
+		searchName.clear();
+		searchCategory.clear();
+		allMarked.clear();
+		searchPos.clear();
+	}
+
+	public boolean unsavedWarning() {
+		Optional<ButtonType> anwser = null;
+		if (hasChanged)
+			anwser = new Alert(AlertType.CONFIRMATION,
+					"Your changes have not been saved!\nThis action will erase your places!").showAndWait();
+		if (!hasChanged || anwser.isPresent() && anwser.get() == ButtonType.OK)
+			return true;
+		return false;
 	}
 
 	class LoadNewMap implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
-			FileChooser fileChooser = new FileChooser();
-			fileChooser.setTitle("Choose map");
-			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.png"));
-			File choosenFile = fileChooser.showOpenDialog(primaryStage);
-			if (choosenFile != null) {
-				map = new Image("file:" + choosenFile.getAbsolutePath());
-				image.setImage(map);
-				refreshMap();
+			if (unsavedWarning()) {
+				FileChooser fileChooser = new FileChooser();
+				fileChooser.setTitle("Choose map");
+				fileChooser.getExtensionFilters()
+						.addAll(new FileChooser.ExtensionFilter("Image Files", "*.jpg", "*.png"));
+				File choosenFile = fileChooser.showOpenDialog(primaryStage);
+				if (choosenFile != null) {
+					map = new Image("file:" + choosenFile.getAbsolutePath());
+					image.setImage(map);
+					removeAll();
+					refreshMap();
+				}
 			}
+		}
+	}
+
+	class LoadPlaces implements EventHandler<ActionEvent> {
+		@Override
+		public void handle(ActionEvent event) {
+			if (unsavedWarning()) {
+
+				FileChooser fileChooser = new FileChooser();
+				fileChooser.setTitle("Choose places file");
+				fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+				File choosenFile = fileChooser.showOpenDialog(primaryStage);
+
+				if (choosenFile != null) {
+					removeAll();
+					refreshMap();
+
+					FileReader file = null;
+					BufferedReader bufferedFile = null;
+					try {
+						file = new FileReader(choosenFile);
+						bufferedFile = new BufferedReader(file);
+
+						String line;
+						try {
+							while ((line = bufferedFile.readLine()) != null)
+								createPlace(line.split(","));
+						} catch (Exception e) {
+							new Alert(AlertType.ERROR, "File format not as expected").showAndWait();
+						}
+						new Alert(AlertType.INFORMATION, "Places loaded successfully!").showAndWait();
+					} catch (IOException e) {
+						new Alert(AlertType.ERROR, "Could not open Place file").showAndWait();
+					} finally {
+						try {
+							file.close();
+							bufferedFile.close();
+						} catch (IOException e) {
+						}
+					}
+				}
+			}
+
+		}
+
+		private void createPlace(String[] arg) {
+			if (arg[0].equals("Named"))
+				storePlace(new NamedPlace(arg[1], arg[4], Double.parseDouble(arg[2]), Double.parseDouble(arg[3])));
+			else if (arg[0].equals("Described"))
+				storePlace(new DescribedPlace(arg[1], arg[4], Double.parseDouble(arg[2]), Double.parseDouble(arg[3]),
+						arg[5]));
+		}
+
+	}
+
+	class SavePlaces implements EventHandler<ActionEvent> {
+
+		@Override
+		public void handle(ActionEvent event) {
+
 		}
 	}
 
@@ -230,7 +333,6 @@ public class Main extends Application {
 		}
 	}
 
-	//can be made to lamda
 	class HidePlace implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
@@ -238,26 +340,30 @@ public class Main extends Application {
 		}
 
 		private void hideMarked() {
-			for (Place p : searchMarked)
+			Iterator<Place> iterator = allMarked.iterator();
+
+			while (iterator.hasNext()) {
+				Place p = iterator.next();
 				if (p.isMarked()) {
 					p.setVisible(false);
+					iterator.remove();
 					p.setMarkedProperty(false);
 				}
+			}
 		}
 	}
 
 	class RemovePlace implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
-			Iterator<Place> iterator = searchMarked.iterator();
+			Iterator<Place> iterator = allMarked.iterator();
 
 			while (iterator.hasNext()) {
 				Place p = iterator.next();
-				if (p.isMarked()) {
-					iterator.remove();
-					deleteFromAll(p);
-				}
+				iterator.remove();
+				deleteFromAll(p);
 			}
+			hasChanged = true;
 		}
 
 		private void deleteFromAll(Place p) {
@@ -272,7 +378,7 @@ public class Main extends Application {
 				searchCategory.remove(p.getCategory());
 
 			searchPos.remove(p.getPos().getKey());
-			searchMarked.remove(p);
+			allMarked.remove(p);
 
 			mapHolder.getChildren().remove(p);
 		}
@@ -314,7 +420,7 @@ public class Main extends Application {
 		}
 	}
 
-	//can be made to lambda
+// can be made to lambda
 	class HideCategory implements EventHandler<ActionEvent> {
 		public void handle(ActionEvent event) {
 			for (Place p : searchCategory.get(getSelectedCategory())) {
@@ -323,20 +429,20 @@ public class Main extends Application {
 			}
 		}
 	}
-	
-	//probs better solution than mouseEvent
+
 	class ShowCategory implements EventHandler<MouseEvent> {
 		public void handle(MouseEvent event) {
 			unmarkAll();
 			try {
-			for (Place p : searchCategory.get(getSelectedCategory())) {
-				p.setVisible(true);
-				p.setMarkedProperty(true);
+				for (Place p : searchCategory.get(getSelectedCategory())) {
+					p.setVisible(true);
+					p.setMarkedProperty(true);
+				}
+			} catch (NullPointerException e) {
 			}
-			}catch(NullPointerException e) {}
 		}
 	}
-	
+
 	class CreateLocation implements EventHandler<ActionEvent> {
 		Place newPlace;
 		String category, name, description;
@@ -356,10 +462,12 @@ public class Main extends Application {
 
 			else if (describedPlace.isSelected()) {
 				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
+
 					@Override
 					public void handle(MouseEvent event) {
 						createDescribed(event.getX(), event.getY());
 					}
+
 				});
 			}
 		}
@@ -371,6 +479,7 @@ public class Main extends Application {
 				if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
 					newPlace = new NamedPlace(getSelectedCategory(), named.getName(), x, y);
 					storePlace(newPlace);
+					hasChanged = true;
 				}
 			} else
 				error("Could not create place here!");
@@ -385,6 +494,7 @@ public class Main extends Application {
 					newPlace = new DescribedPlace(getSelectedCategory(), described.getName(), x, y,
 							described.getDescription());
 					storePlace(newPlace);
+					hasChanged = true;
 				}
 			} else
 				error("Could not create place here!");
