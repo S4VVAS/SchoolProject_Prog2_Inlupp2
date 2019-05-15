@@ -3,14 +3,18 @@ package application;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
 
 import javafx.application.Application;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -47,7 +51,7 @@ public class Main extends Application {
 
 	private Stage primaryStage;
 	private BorderPane root;
-	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn;
+	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn, unmarkAllBtn;
 	private RadioButton namedPlace, describedPlace;
 	private TextField textSearch;
 	private ImageView image;
@@ -57,7 +61,7 @@ public class Main extends Application {
 	private MenuItem loadMap, loadPlaces, save, exit;
 	private Image map;
 	private Pane mapHolder;
-	private boolean hasChanged = false;
+	private SimpleBooleanProperty hasChanged = new SimpleBooleanProperty(false);
 
 	private HashMap<String, Position> searchPos = new HashMap<>();
 	private TreeMap<String, HashSet<Place>> searchName = new TreeMap<>();
@@ -69,6 +73,7 @@ public class Main extends Application {
 		createScene();
 		setupScene();
 		setupHandlers();
+		setupListeners();
 
 		Scene scene = new Scene(root, 600, 400);
 		primaryStage.setScene(scene);
@@ -102,6 +107,7 @@ public class Main extends Application {
 		// RIGHT
 		list = new ListView<String>();
 		hideCategoryBtn = new Button("Hide Category");
+		unmarkAllBtn = new Button("Unmark All");
 	}
 
 	private void setupScene() {
@@ -146,7 +152,7 @@ public class Main extends Application {
 		list.setPrefSize(130, 80);
 		list.setItems(categories);
 
-		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn);
+		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn, unmarkAllBtn);
 		rightLayout.setAlignment(Pos.CENTER);
 		rightLayout.setSpacing(10);
 		root.setRight(rightLayout);
@@ -155,6 +161,8 @@ public class Main extends Application {
 	private void setupHandlers() {
 		loadMap.setOnAction(new LoadNewMap());
 		loadPlaces.setOnAction(new LoadPlaces());
+		save.setOnAction(new SavePlaces());
+		exit.setOnAction(new ExitApplication());
 
 		createBtn.setOnAction(new CreateLocation());
 
@@ -166,9 +174,20 @@ public class Main extends Application {
 
 		coordinatesBtn.setOnAction(new SearchCoordinates());
 
-		hideCategoryBtn.setOnAction(new HideCategory());
-
 		list.setOnMouseClicked(new ShowCategory());
+		hideCategoryBtn.setOnAction(new HideCategory());
+		unmarkAllBtn.setOnAction(e -> unmarkAll());
+		
+	}
+	
+	private void setupListeners() {
+		save.setDisable(true);
+		hasChanged.addListener((obs, old, nevv) -> {
+			if(!hasChanged.get())
+				save.setDisable(true);
+			else
+				save.setDisable(false);
+		});
 	}
 
 	private void refreshMap() {
@@ -188,10 +207,10 @@ public class Main extends Application {
 
 	private void storePlace(Place newPlace) {
 		allMarked.add(newPlace);
-		newPlace.getBool().addListener((observable, oldValue, newValue) -> {
-			if (newValue == true) {
+		newPlace.getBool().addListener((obs, old, nevv) -> {
+			if (nevv == true) {
 				allMarked.add(newPlace);
-			} else if (newValue == false) {
+			} else if (nevv == false) {
 				allMarked.remove(newPlace);
 			}
 		});
@@ -225,12 +244,12 @@ public class Main extends Application {
 		searchPos.clear();
 	}
 
-	public boolean unsavedWarning() {
+	public boolean unsaved() {
 		Optional<ButtonType> anwser = null;
-		if (hasChanged)
+		if (hasChanged.get())
 			anwser = new Alert(AlertType.CONFIRMATION,
 					"Your changes have not been saved!\nThis action will erase your places!").showAndWait();
-		if (!hasChanged || anwser.isPresent() && anwser.get() == ButtonType.OK)
+		if (!hasChanged.get() || anwser.isPresent() && anwser.get() == ButtonType.OK)
 			return true;
 		return false;
 	}
@@ -238,7 +257,7 @@ public class Main extends Application {
 	class LoadNewMap implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
-			if (unsavedWarning()) {
+			if (unsaved()) {
 				FileChooser fileChooser = new FileChooser();
 				fileChooser.setTitle("Choose map");
 				fileChooser.getExtensionFilters()
@@ -249,6 +268,7 @@ public class Main extends Application {
 					image.setImage(map);
 					removeAll();
 					refreshMap();
+					hasChanged.set(false);
 				}
 			}
 		}
@@ -257,7 +277,7 @@ public class Main extends Application {
 	class LoadPlaces implements EventHandler<ActionEvent> {
 		@Override
 		public void handle(ActionEvent event) {
-			if (unsavedWarning()) {
+			if (unsaved()) {
 				FileChooser fileChooser = new FileChooser();
 				fileChooser.setTitle("Choose places file");
 				fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
@@ -266,7 +286,7 @@ public class Main extends Application {
 				if (choosenFile != null) {
 					removeAll();
 					refreshMap();
-					hasChanged = true;
+					hasChanged.set(false);
 					
 					try {
 						FileReader file = new FileReader(choosenFile);
@@ -302,10 +322,36 @@ public class Main extends Application {
 	}
 
 	class SavePlaces implements EventHandler<ActionEvent> {
+		@Override
+		public void handle(ActionEvent event) {
+			FileChooser fileChooser = new FileChooser();
+			fileChooser.setTitle("Choose places file");
+			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
+			File choosenFile = fileChooser.showSaveDialog(primaryStage);
+			
+			if(choosenFile != null) {
+				hasChanged.set(false);
+				try {
+					FileWriter file = new FileWriter(choosenFile);
+					PrintWriter outBound = new PrintWriter(file);
+					for(Entry<String, Position> p: searchPos.entrySet()) {
+						outBound.println(p.getValue().getPlace().toString());
+					}
+					file.close();
+					outBound.close();
+					new Alert(AlertType.INFORMATION, "Places saved successfully!").showAndWait();
+				} catch (IOException e) {
+					new Alert(AlertType.ERROR, "Could not save Place file").showAndWait();
+				}
+			}
+		}
+	}
+	
+	class ExitApplication implements EventHandler<ActionEvent>{
 
 		@Override
 		public void handle(ActionEvent event) {
-
+			
 		}
 	}
 
@@ -358,7 +404,7 @@ public class Main extends Application {
 				iterator.remove();
 				deleteFromAll(p);
 			}
-			hasChanged = true;
+			hasChanged.set(true);
 		}
 
 		private void deleteFromAll(Place p) {
@@ -474,7 +520,7 @@ public class Main extends Application {
 				if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
 					newPlace = new NamedPlace(getSelectedCategory(), named.getName(), x, y);
 					storePlace(newPlace);
-					hasChanged = true;
+					hasChanged.set(true);
 				}
 			} else
 				error("Could not create place here!");
@@ -489,7 +535,7 @@ public class Main extends Application {
 					newPlace = new DescribedPlace(getSelectedCategory(), described.getName(), x, y,
 							described.getDescription());
 					storePlace(newPlace);
-					hasChanged = true;
+					hasChanged.set(true);
 				}
 			} else
 				error("Could not create place here!");

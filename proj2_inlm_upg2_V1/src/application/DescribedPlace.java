@@ -5,12 +5,13 @@ import javafx.scene.control.Alert.AlertType;
 
 public class DescribedPlace extends Place {
 
-	private String description, toString;
+	private String description = "null", toString;
 
 	public DescribedPlace(String category, String name, double x, double y, String description) {
 		super(name, category, x, y);
-		this.description = description;
-		toString = "Described," + category + "," + (int)x + "," + (int)y + "," + name + "," + description;
+		if (!description.equals(""))
+			this.description = description;
+		toString = "Described," + category + "," + (int) x + "," + (int) y + "," + super.name + "," + this.description;
 	}
 
 	@Override
@@ -19,6 +20,10 @@ public class DescribedPlace extends Place {
 		alert.setHeaderText(name + " [ x" + pos.getX() + " / y" + pos.getY() + " ]");
 		alert.setTitle(category);
 		alert.showAndWait();
+	}
+	
+	public String t() {
+		return description;
 	}
 
 	@Override

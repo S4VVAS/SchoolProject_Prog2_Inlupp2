@@ -15,7 +15,12 @@ public abstract class Place extends Polygon {
 	private SimpleBooleanProperty isMarked = new SimpleBooleanProperty();
 
 	public Place(String name, String category, double x, double y) {
-		this.name = name;
+		
+		if (!name.equals(""))
+			this.name = name;
+		else
+			this.name = "null";
+		
 		this.category = category;
 		pos = new Position(x, y, this);
 		this.setOnMouseClicked(new MarkerEvent());
@@ -41,7 +46,7 @@ public abstract class Place extends Polygon {
 			color = Color.BLACK;
 			markedColor = Color.DIMGRAY;
 			setupMarker();
-			
+
 		}
 	}
 
@@ -84,7 +89,7 @@ public abstract class Place extends Polygon {
 	public Position getPos() {
 		return pos;
 	}
-	
+
 	public SimpleBooleanProperty getBool() {
 		return isMarked;
 	}
@@ -92,7 +97,7 @@ public abstract class Place extends Polygon {
 	public boolean isMarked() {
 		return isMarked.getValue();
 	}
-	
+
 	public void setMarkedProperty(boolean bool) {
 		isMarked.set(bool);
 		setMarkedProperty();
@@ -113,7 +118,7 @@ public abstract class Place extends Polygon {
 	}
 
 	abstract void showPlaceDescription();
-	
+
 	@Override
 	public abstract String toString();
 
