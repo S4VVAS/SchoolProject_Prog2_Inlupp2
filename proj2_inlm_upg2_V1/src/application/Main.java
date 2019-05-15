@@ -258,7 +258,6 @@ public class Main extends Application {
 		@Override
 		public void handle(ActionEvent event) {
 			if (unsavedWarning()) {
-
 				FileChooser fileChooser = new FileChooser();
 				fileChooser.setTitle("Choose places file");
 				fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
@@ -267,12 +266,11 @@ public class Main extends Application {
 				if (choosenFile != null) {
 					removeAll();
 					refreshMap();
-
-					FileReader file = null;
-					BufferedReader bufferedFile = null;
+					hasChanged = true;
+					
 					try {
-						file = new FileReader(choosenFile);
-						bufferedFile = new BufferedReader(file);
+						FileReader file = new FileReader(choosenFile);
+						BufferedReader bufferedFile = new BufferedReader(file);
 
 						String line;
 						try {
@@ -282,14 +280,11 @@ public class Main extends Application {
 							new Alert(AlertType.ERROR, "File format not as expected").showAndWait();
 						}
 						new Alert(AlertType.INFORMATION, "Places loaded successfully!").showAndWait();
+						
+						file.close();
+						bufferedFile.close();
 					} catch (IOException e) {
 						new Alert(AlertType.ERROR, "Could not open Place file").showAndWait();
-					} finally {
-						try {
-							file.close();
-							bufferedFile.close();
-						} catch (IOException e) {
-						}
 					}
 				}
 			}
