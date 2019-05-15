@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -23,6 +24,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.stage.WindowEvent;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -72,9 +74,10 @@ public class Main extends Application {
 	public void start(Stage primaryStage) {
 		createScene();
 		setupScene();
-		setupHandlers();
+		setupHandlers(primaryStage);
 		setupListeners();
-
+		
+		this.primaryStage = primaryStage;
 		Scene scene = new Scene(root, 600, 400);
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -158,11 +161,12 @@ public class Main extends Application {
 		root.setRight(rightLayout);
 	}
 
-	private void setupHandlers() {
+	private void setupHandlers(Stage primaryStage) {
 		loadMap.setOnAction(new LoadNewMap());
 		loadPlaces.setOnAction(new LoadPlaces());
 		save.setOnAction(new SavePlaces());
-		exit.setOnAction(new ExitApplication());
+		exit.setOnAction(
+				action -> primaryStage.fireEvent(new WindowEvent(primaryStage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
 		createBtn.setOnAction(new CreateLocation());
 
@@ -177,13 +181,14 @@ public class Main extends Application {
 		list.setOnMouseClicked(new ShowCategory());
 		hideCategoryBtn.setOnAction(new HideCategory());
 		unmarkAllBtn.setOnAction(e -> unmarkAll());
-		
+
+		primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, new ExitApplication());
 	}
-	
+
 	private void setupListeners() {
 		save.setDisable(true);
 		hasChanged.addListener((obs, old, nevv) -> {
-			if(!hasChanged.get())
+			if (!hasChanged.get())
 				save.setDisable(true);
 			else
 				save.setDisable(false);
@@ -244,7 +249,7 @@ public class Main extends Application {
 		searchPos.clear();
 	}
 
-	public boolean unsaved() {
+	private boolean unsaved() {
 		Optional<ButtonType> anwser = null;
 		if (hasChanged.get())
 			anwser = new Alert(AlertType.CONFIRMATION,
@@ -287,7 +292,7 @@ public class Main extends Application {
 					removeAll();
 					refreshMap();
 					hasChanged.set(false);
-					
+
 					try {
 						FileReader file = new FileReader(choosenFile);
 						BufferedReader bufferedFile = new BufferedReader(file);
@@ -300,7 +305,7 @@ public class Main extends Application {
 							new Alert(AlertType.ERROR, "File format not as expected").showAndWait();
 						}
 						new Alert(AlertType.INFORMATION, "Places loaded successfully!").showAndWait();
-						
+
 						file.close();
 						bufferedFile.close();
 					} catch (IOException e) {
@@ -328,13 +333,13 @@ public class Main extends Application {
 			fileChooser.setTitle("Choose places file");
 			fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files", "*.txt"));
 			File choosenFile = fileChooser.showSaveDialog(primaryStage);
-			
-			if(choosenFile != null) {
+
+			if (choosenFile != null) {
 				hasChanged.set(false);
 				try {
 					FileWriter file = new FileWriter(choosenFile);
 					PrintWriter outBound = new PrintWriter(file);
-					for(Entry<String, Position> p: searchPos.entrySet()) {
+					for (Entry<String, Position> p : searchPos.entrySet()) {
 						outBound.println(p.getValue().getPlace().toString());
 					}
 					file.close();
@@ -346,12 +351,19 @@ public class Main extends Application {
 			}
 		}
 	}
-	
-	class ExitApplication implements EventHandler<ActionEvent>{
+
+	class ExitApplication implements EventHandler<WindowEvent> {
 
 		@Override
-		public void handle(ActionEvent event) {
-			
+		public void handle(WindowEvent event) {
+			if (hasChanged.get()) {
+				Optional<ButtonType> anwser = new Alert(AlertType.CONFIRMATION,
+						"You have made changes that have not yet been saved!\nDo you wish to quit anyway?")
+								.showAndWait();
+				if(anwser.isPresent() && anwser.get() == ButtonType.CANCEL || anwser.get() == ButtonType.CLOSE)
+					event.consume();
+				
+			}
 		}
 	}
 
