@@ -3,14 +3,10 @@ package application;
 public class Position {
 
 	private double xCord, yCord;
-	private Place place;
-	private String key;
 
-	public Position(double x, double y, Place place) {
+	public Position(double x, double y) {
 		xCord = x;
 		yCord = y;
-		this.place = place;
-		key = Double.toString(x) + Double.toString(y);
 	}
 
 	public double getX() {
@@ -20,16 +16,18 @@ public class Position {
 	public double getY() {
 		return yCord;
 	}
+	
+	@Override
+	public int hashCode() {
+		return (int) ((xCord * 1000000) + yCord);
+	}
 
-	public Place getPlace() {
-		return place;
-	}
-	
-	public String getKey() {
-		return key;
-	}
-	
-	public boolean equals(double x, double y) {
-		return xCord == x && yCord == y ? true : false;
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		else if (!(obj instanceof Position) || obj == null)
+			return false;
+		return xCord == ((Position)obj).xCord && yCord == ((Position)obj).yCord ? true : false;
 	}
 }

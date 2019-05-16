@@ -22,7 +22,7 @@ public abstract class Place extends Polygon {
 			this.name = "null";
 		
 		this.category = category;
-		pos = new Position(x, y, this);
+		pos = new Position(x, y);
 		this.setOnMouseClicked(new MarkerEvent());
 		isMarked.set(true);
 

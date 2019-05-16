@@ -64,7 +64,7 @@ public class Main extends Application {
 	private Pane mapHolder;
 	private SimpleBooleanProperty hasChanged = new SimpleBooleanProperty(false);
 
-	private HashMap<String, Position> searchPos = new HashMap<>();
+	private HashMap<Position, Place> searchPos = new HashMap<>();
 	private TreeMap<String, HashSet<Place>> searchName = new TreeMap<>();
 	private TreeMap<String, HashSet<Place>> searchCategory = new TreeMap<>();
 	private HashSet<Place> allMarked = new HashSet<>();
@@ -149,9 +149,9 @@ public class Main extends Application {
 		((ScrollPane) root.getCenter()).setPadding(new Insets(10));
 
 		// RIGHT
-		categories = FXCollections.observableArrayList("Bus", "Underground", "Train");
+		categories = FXCollections.observableArrayList("Bus", "Underground", "Train", "None");
 
-		list.setPrefSize(130, 80);
+		list.setPrefSize(130, 94);
 		list.setItems(categories);
 
 		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn, unmarkAllBtn);
@@ -204,12 +204,16 @@ public class Main extends Application {
 	}
 
 	private String getSelectedCategory() {
+		//Just in case nothing is selected
 		if (list.getSelectionModel().getSelectedItem() == null)
 			return "None";
 		return list.getSelectionModel().getSelectedItem();
 	}
 
 	private void storePlace(Place newPlace) {
+		
+		System.out.println(newPlace.getPos().hashCode());
+		
 		allMarked.add(newPlace);
 		newPlace.getBool().addListener((obs, old, nevv) -> {
 			if (nevv == true) {
@@ -225,7 +229,7 @@ public class Main extends Application {
 		searchCategory.putIfAbsent(newPlace.getCategory(), new HashSet<Place>());
 		searchCategory.get(newPlace.getCategory()).add(newPlace);
 
-		searchPos.put(newPlace.getPos().getKey(), newPlace.getPos());
+		searchPos.put(newPlace.getPos(), newPlace);
 
 		mapHolder.getChildren().add(newPlace);
 	}
@@ -303,8 +307,9 @@ public class Main extends Application {
 						} catch (Exception e) {
 							new Alert(AlertType.ERROR, "File format not as expected").showAndWait();
 						}
+						unmarkAll();
 						new Alert(AlertType.INFORMATION, "Places loaded successfully!").showAndWait();
-
+	
 						file.close();
 						bufferedFile.close();
 					} catch (IOException e) {
@@ -338,8 +343,8 @@ public class Main extends Application {
 				try {
 					FileWriter file = new FileWriter(choosenFile);
 					PrintWriter outBound = new PrintWriter(file);
-					for (Entry<String, Position> p : searchPos.entrySet()) {
-						outBound.println(p.getValue().getPlace().toString());
+					for (Entry<Position, Place> p : searchPos.entrySet()) {
+						outBound.println(p.getValue().toString());
 					}
 					file.close();
 					outBound.close();
@@ -429,7 +434,7 @@ public class Main extends Application {
 			else
 				searchCategory.remove(p.getCategory());
 
-			searchPos.remove(p.getPos().getKey());
+			searchPos.remove(p.getPos());
 			allMarked.remove(p);
 
 			mapHolder.getChildren().remove(p);
@@ -444,9 +449,9 @@ public class Main extends Application {
 			if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
 				try {
 					if (Double.parseDouble(search.getXCord()) >= 0 && Double.parseDouble(search.getYCord()) >= 0) {
-						if (searchPos.get(search.getXCord() + search.getYCord()) != null) {
+						if (searchPos.containsKey(new Position(Double.parseDouble(search.getXCord()), Double.parseDouble(search.getYCord())))) {
 							unmarkAll();
-							Place p = searchPos.get(search.getXCord() + search.getYCord()).getPlace();
+							Place p = searchPos.get(new Position(Double.parseDouble(search.getXCord()), Double.parseDouble(search.getYCord())));
 							p.setMarkedProperty(true);
 							p.setVisible(true);
 						} else
@@ -525,7 +530,7 @@ public class Main extends Application {
 		}
 
 		private void createNamed(double x, double y) {
-			if (!searchPos.containsKey(Double.toString(x) + Double.toString(y))) {
+			if (!searchPos.containsKey(new Position(x , y))) {
 				CreateNamedPlace named = new CreateNamedPlace(x, y);
 				Optional<ButtonType> anwser = named.showAndWait();
 				if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
@@ -539,7 +544,7 @@ public class Main extends Application {
 		}
 
 		private void createDescribed(double x, double y) {
-			if (!searchPos.containsKey(Double.toString(x) + Double.toString(y))) {
+			if (!searchPos.containsKey(new Position(x , y))) {
 				CreateDescribedPlace described = new CreateDescribedPlace(x, y);
 				Optional<ButtonType> anwser = described.showAndWait();
 				if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
