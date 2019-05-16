@@ -14,7 +14,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
