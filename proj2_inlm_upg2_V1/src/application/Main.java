@@ -317,7 +317,6 @@ public class Main extends Application {
 					}
 				}
 			}
-
 		}
 
 		private void createPlace(String[] arg) {
@@ -327,7 +326,6 @@ public class Main extends Application {
 				storePlace(new DescribedPlace(arg[1], arg[4], Double.parseDouble(arg[2]), Double.parseDouble(arg[3]),
 						arg[5]));
 		}
-
 	}
 
 	class SavePlaces implements EventHandler<ActionEvent> {
@@ -366,7 +364,6 @@ public class Main extends Application {
 								.showAndWait();
 				if(anwser.isPresent() && anwser.get() == ButtonType.CANCEL || anwser.get() == ButtonType.CLOSE)
 					event.consume();
-				
 			}
 		}
 	}
