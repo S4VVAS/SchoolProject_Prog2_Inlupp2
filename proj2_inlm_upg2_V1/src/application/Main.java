@@ -1,3 +1,4 @@
+//Savvas Giortsis (sagi2536)
 package application;
 
 import java.io.BufferedReader;
@@ -211,9 +212,6 @@ public class Main extends Application {
 	}
 
 	private void storePlace(Place newPlace) {
-		
-		System.out.println(newPlace.getPos().hashCode());
-		
 		allMarked.add(newPlace);
 		newPlace.getBool().addListener((obs, old, nevv) -> {
 			if (nevv == true) {
@@ -565,7 +563,6 @@ public class Main extends Application {
 			mapHolder.setOnMouseClicked(null);
 			mapHolder.setCursor(Cursor.DEFAULT);
 		}
-
 	}
 
 	public static void main(String[] args) {
