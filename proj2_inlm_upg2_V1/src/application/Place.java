@@ -1,3 +1,4 @@
+//Savvas Giortsis (sagi2536)
 package application;
 
 import javafx.beans.property.SimpleBooleanProperty;
@@ -15,7 +16,6 @@ public abstract class Place extends Polygon {
 	private SimpleBooleanProperty isMarked = new SimpleBooleanProperty();
 
 	public Place(String name, String category, double x, double y) {
-		
 		if (!name.equals(""))
 			this.name = name;
 		else
@@ -46,7 +46,6 @@ public abstract class Place extends Polygon {
 			color = Color.BLACK;
 			markedColor = Color.DIMGRAY;
 			setupMarker();
-
 		}
 	}
 
@@ -112,14 +111,11 @@ public abstract class Place extends Polygon {
 			} else if (event.getButton() == MouseButton.SECONDARY) {
 				showPlaceDescription();
 			}
-
 		}
-
 	}
 
 	abstract void showPlaceDescription();
 
 	@Override
 	public abstract String toString();
-
 }
