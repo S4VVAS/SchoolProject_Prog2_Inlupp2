@@ -6,7 +6,7 @@ import javafx.scene.control.TextField;
 
 public class CreateDescribedPlace extends PopUp {
 
-	TextField name, description;
+	private TextField name, description;
 
 	public CreateDescribedPlace(double x, double y) {
 		super(x, y);

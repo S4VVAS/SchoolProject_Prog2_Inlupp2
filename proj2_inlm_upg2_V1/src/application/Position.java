@@ -2,7 +2,6 @@
 package application;
 
 public class Position {
-
 	private double xCord, yCord;
 	private int hashMultiplier;
 

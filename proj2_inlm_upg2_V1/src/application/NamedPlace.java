@@ -5,7 +5,6 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 
 public class NamedPlace extends Place {
-
 	private String toString;
 	
 	public NamedPlace(String category, String name, double x, double y) {
@@ -14,7 +13,7 @@ public class NamedPlace extends Place {
 	}
 
 	@Override
-	void showPlaceDescription() {
+	public void showPlaceDescription() {
 		Alert alert = new Alert(AlertType.INFORMATION);
 		alert.setHeaderText(name + " [ x" + pos.getX() + " / y" + pos.getY() + " ]");
 		alert.setTitle(category);

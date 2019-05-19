@@ -16,15 +16,11 @@ public class DescribedPlace extends Place {
 	}
 
 	@Override
-	void showPlaceDescription() {
+	public void showPlaceDescription() {
 		Alert alert = new Alert(AlertType.INFORMATION, description);
 		alert.setHeaderText(name + " [ x" + pos.getX() + " / y" + pos.getY() + " ]");
 		alert.setTitle(category);
 		alert.showAndWait();
-	}
-	
-	public String t() {
-		return description;
 	}
 
 	@Override

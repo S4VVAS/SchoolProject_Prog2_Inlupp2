@@ -5,8 +5,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
 public class CreateNamedPlace extends PopUp {
-
-	TextField name;
+	private TextField name;
 
 	public CreateNamedPlace(double x, double y) {
 		super(x, y);

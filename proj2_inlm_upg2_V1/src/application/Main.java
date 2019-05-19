@@ -53,7 +53,8 @@ public class Main extends Application {
 
 	private Stage primaryStage;
 	private BorderPane root;
-	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn, unmarkAllBtn;
+	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn, unmarkAllBtn, generateBtn,
+			markAllBtn;
 	private RadioButton namedPlace, describedPlace;
 	private TextField textSearch;
 	private ImageView image;
@@ -70,13 +71,33 @@ public class Main extends Application {
 	private TreeMap<String, HashSet<Place>> searchCategory = new TreeMap<>();
 	private HashSet<Place> allMarked = new HashSet<>();
 
+	private void generate() {
+		long startTime = System.currentTimeMillis();
+		int amt = 0;
+		int x = (int) map.getWidth();
+		int y = (int) map.getHeight();
+		for (int ix = 0; ix < x; ix++)
+			for (int iy = 0; iy < y; iy++) {
+				amt++;
+				int rnd = (int) (Math.random() + 0.5);
+				if (rnd == 1)
+					storePlace(new NamedPlace(categories.get((int) (Math.random() * 4)), "named", ix, iy));
+				else
+					storePlace(new DescribedPlace(categories.get((int) (Math.random() * 4)), "described", ix, iy,
+							"description"));
+			}
+		long stopTime = System.currentTimeMillis();
+		System.out.println(stopTime - startTime + "s, amt = " + amt);
+		hasChanged.set(true);
+	}
+
 	@Override
 	public void start(Stage primaryStage) {
 		createScene();
 		setupScene();
 		setupHandlers(primaryStage);
 		setupListeners();
-		
+
 		this.primaryStage = primaryStage;
 		Scene scene = new Scene(root, 600, 400);
 		primaryStage.setScene(scene);
@@ -111,6 +132,8 @@ public class Main extends Application {
 		list = new ListView<String>();
 		hideCategoryBtn = new Button("Hide Category");
 		unmarkAllBtn = new Button("Unmark All");
+		markAllBtn = new Button("Mark All");
+		generateBtn = new Button("    Generate\n(experimental)\n   (CAUTION)");
 	}
 
 	private void setupScene() {
@@ -155,33 +178,36 @@ public class Main extends Application {
 		list.setPrefSize(130, 94);
 		list.setItems(categories);
 
-		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn, unmarkAllBtn);
+		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn, unmarkAllBtn, markAllBtn,
+				generateBtn);
 		rightLayout.setAlignment(Pos.CENTER);
 		rightLayout.setSpacing(10);
 		root.setRight(rightLayout);
 	}
 
 	private void setupHandlers(Stage primaryStage) {
+		// DROP DOWN
 		loadMap.setOnAction(new LoadNewMap());
 		loadPlaces.setOnAction(new LoadPlaces());
 		save.setOnAction(new SavePlaces());
 		exit.setOnAction(
 				action -> primaryStage.fireEvent(new WindowEvent(primaryStage, WindowEvent.WINDOW_CLOSE_REQUEST)));
 
+		// TOP
 		createBtn.setOnAction(new CreateLocation());
-
 		searchBtn.setOnAction(new SearchPlace());
-
 		hideBtn.setOnAction(new HidePlace());
-
 		removeBtn.setOnAction(new RemovePlace());
-
 		coordinatesBtn.setOnAction(new SearchCoordinates());
 
+		// RIGHT
 		list.setOnMouseClicked(new ShowCategory());
 		hideCategoryBtn.setOnAction(new HideCategory());
 		unmarkAllBtn.setOnAction(e -> unmarkAll());
+		markAllBtn.setOnAction(e -> markAll());
+		generateBtn.setOnAction(e -> generate());
 
+		// WINDOW
 		primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, new ExitApplication());
 	}
 
@@ -199,13 +225,13 @@ public class Main extends Application {
 		mapHolder.getChildren().clear();
 		mapHolder.getChildren().add(image);
 
-		for (Place p : allMarked) {
-			mapHolder.getChildren().add(p);
+		for (Entry<Position, Place> p : searchPos.entrySet()) {
+			mapHolder.getChildren().add(p.getValue());
 		}
 	}
 
 	private String getSelectedCategory() {
-		//Just in case nothing is selected
+		// Just in case nothing is selected
 		if (list.getSelectionModel().getSelectedItem() == null)
 			return "None";
 		return list.getSelectionModel().getSelectedItem();
@@ -240,6 +266,12 @@ public class Main extends Application {
 				iterator.remove();
 				p.setMarkedProperty(false);
 			}
+		}
+	}
+
+	private void markAll() {
+		for (Entry<Position, Place> p : searchPos.entrySet()) {
+			p.getValue().setMarkedProperty(true);
 		}
 	}
 
@@ -293,7 +325,6 @@ public class Main extends Application {
 					removeAll();
 					refreshMap();
 					hasChanged.set(false);
-
 					try {
 						FileReader file = new FileReader(choosenFile);
 						BufferedReader bufferedFile = new BufferedReader(file);
@@ -302,12 +333,11 @@ public class Main extends Application {
 						try {
 							while ((line = bufferedFile.readLine()) != null)
 								createPlace(line.split(","));
+							unmarkAll();
+							new Alert(AlertType.INFORMATION, "Places loaded successfully!").showAndWait();
 						} catch (Exception e) {
 							new Alert(AlertType.ERROR, "File format not as expected").showAndWait();
 						}
-						unmarkAll();
-						new Alert(AlertType.INFORMATION, "Places loaded successfully!").showAndWait();
-	
 						file.close();
 						bufferedFile.close();
 					} catch (IOException e) {
@@ -339,9 +369,8 @@ public class Main extends Application {
 				try {
 					FileWriter file = new FileWriter(choosenFile);
 					PrintWriter outBound = new PrintWriter(file);
-					for (Entry<Position, Place> p : searchPos.entrySet()) {
+					for (Entry<Position, Place> p : searchPos.entrySet())
 						outBound.println(p.getValue().toString());
-					}
 					file.close();
 					outBound.close();
 					new Alert(AlertType.INFORMATION, "Places saved successfully!").showAndWait();
@@ -353,14 +382,13 @@ public class Main extends Application {
 	}
 
 	class ExitApplication implements EventHandler<WindowEvent> {
-
 		@Override
 		public void handle(WindowEvent event) {
 			if (hasChanged.get()) {
 				Optional<ButtonType> anwser = new Alert(AlertType.CONFIRMATION,
 						"You have made changes that have not yet been saved!\nDo you wish to quit anyway?")
 								.showAndWait();
-				if(anwser.isPresent() && anwser.get() == ButtonType.CANCEL || anwser.get() == ButtonType.CLOSE)
+				if (anwser.isPresent() && anwser.get() == ButtonType.CANCEL || anwser.get() == ButtonType.CLOSE)
 					event.consume();
 			}
 		}
@@ -441,12 +469,14 @@ public class Main extends Application {
 		public void handle(ActionEvent event) {
 			SearchCoordsWindow search = new SearchCoordsWindow();
 			Optional<ButtonType> anwser = search.showAndWait();
-			if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
+			if (anwser.isPresent() && anwser.get() == ButtonType.OK)
 				try {
 					if (Double.parseDouble(search.getXCord()) >= 0 && Double.parseDouble(search.getYCord()) >= 0) {
-						if (searchPos.containsKey(new Position(Double.parseDouble(search.getXCord()), Double.parseDouble(search.getYCord())))) {
+						if (searchPos.containsKey(new Position(Double.parseDouble(search.getXCord()),
+								Double.parseDouble(search.getYCord())))) {
 							unmarkAll();
-							Place p = searchPos.get(new Position(Double.parseDouble(search.getXCord()), Double.parseDouble(search.getYCord())));
+							Place p = searchPos.get(new Position(Double.parseDouble(search.getXCord()),
+									Double.parseDouble(search.getYCord())));
 							p.setMarkedProperty(true);
 							p.setVisible(true);
 						} else
@@ -456,7 +486,6 @@ public class Main extends Application {
 				} catch (NumberFormatException e) {
 					formatError();
 				}
-			}
 		}
 
 		private void noPlaceError() {
@@ -472,7 +501,6 @@ public class Main extends Application {
 		}
 	}
 
-// can be made to lambda
 	class HideCategory implements EventHandler<ActionEvent> {
 		public void handle(ActionEvent event) {
 			for (Place p : searchCategory.get(getSelectedCategory())) {
@@ -496,8 +524,7 @@ public class Main extends Application {
 	}
 
 	class CreateLocation implements EventHandler<ActionEvent> {
-		Place newPlace;
-		String category, name, description;
+		private Place newPlace;
 
 		@Override
 		public void handle(ActionEvent event) {
@@ -510,22 +537,18 @@ public class Main extends Application {
 						createNamed(event.getX(), event.getY());
 					}
 				});
-			}
-
-			else if (describedPlace.isSelected()) {
+			} else if (describedPlace.isSelected()) {
 				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
-
 					@Override
 					public void handle(MouseEvent event) {
 						createDescribed(event.getX(), event.getY());
 					}
-
 				});
 			}
 		}
 
 		private void createNamed(double x, double y) {
-			if (!searchPos.containsKey(new Position(x , y))) {
+			if (!searchPos.containsKey(new Position(x, y))) {
 				CreateNamedPlace named = new CreateNamedPlace(x, y);
 				Optional<ButtonType> anwser = named.showAndWait();
 				if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
@@ -539,7 +562,7 @@ public class Main extends Application {
 		}
 
 		private void createDescribed(double x, double y) {
-			if (!searchPos.containsKey(new Position(x , y))) {
+			if (!searchPos.containsKey(new Position(x, y))) {
 				CreateDescribedPlace described = new CreateDescribedPlace(x, y);
 				Optional<ButtonType> anwser = described.showAndWait();
 				if (anwser.isPresent() && anwser.get() == ButtonType.OK) {
