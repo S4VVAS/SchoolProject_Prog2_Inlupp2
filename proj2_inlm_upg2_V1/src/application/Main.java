@@ -74,12 +74,13 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
+		this.primaryStage = primaryStage;
 		createScene();
 		setupScene();
-		setupHandlers(primaryStage);
+		setupHandlers();
 		setupListeners();
 		
-		this.primaryStage = primaryStage;
+		
 		Scene scene = new Scene(root, 600, 400);
 		primaryStage.setScene(scene);
 		primaryStage.show();
@@ -163,7 +164,7 @@ public class Main extends Application {
 		root.setRight(rightLayout);
 	}
 
-	private void setupHandlers(Stage primaryStage) {
+	private void setupHandlers() {
 		// DROP DOWN
 		loadMap.setOnAction(new LoadNewMap());
 		loadPlaces.setOnAction(new LoadPlaces());
@@ -198,7 +199,7 @@ public class Main extends Application {
 		});
 
 		// BUTTONS DISABLE IF NOTHING IS MARKED
-		removeBtn.setDisable(false);
+		removeBtn.setDisable(true);
 		hideBtn.setDisable(true);
 		unmarkAllBtn.setDisable(true);
 		allMarked.addListener((SetChangeListener<Place>) change -> {
