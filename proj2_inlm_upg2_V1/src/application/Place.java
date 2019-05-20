@@ -108,9 +108,8 @@ public abstract class Place extends Polygon {
 			if (event.getButton() == MouseButton.PRIMARY) {
 				isMarked.set(!isMarked.getValue());
 				setMarkedProperty();
-			} else if (event.getButton() == MouseButton.SECONDARY) {
+			} else if (event.getButton() == MouseButton.SECONDARY)
 				showPlaceDescription();
-			}
 		}
 	}
 

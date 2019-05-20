@@ -52,7 +52,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 public class Main extends Application {
-
+	
 	private Stage primaryStage;
 	private BorderPane root;
 	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn, unmarkAllBtn;
@@ -116,7 +116,6 @@ public class Main extends Application {
 	}
 
 	private void setupScene() {
-
 		// TOP
 		textSearch.setPromptText("Search");
 
@@ -170,7 +169,6 @@ public class Main extends Application {
 		save.setOnAction(new SavePlaces());
 		exit.setOnAction(
 				action -> primaryStage.fireEvent(new WindowEvent(primaryStage, WindowEvent.WINDOW_CLOSE_REQUEST)));
-
 		// TOP
 		createBtn.setOnAction(new CreateLocation());
 		searchBtn.setOnAction(new SearchPlace());
@@ -188,7 +186,7 @@ public class Main extends Application {
 	}
 
 	private void setupListeners() {
-		// SAVE DISABLE IF NOTHING HAS CHANGED
+		// SAVE-BTN DISABLE IF NOTHING HAS CHANGED
 		save.setDisable(true);
 		hasChanged.addListener((obs, old, nevv) -> {
 			if (!hasChanged.get())
@@ -196,8 +194,7 @@ public class Main extends Application {
 			else
 				save.setDisable(false);
 		});
-
-		// BUTTONS DISABLE IF NOTHING IS MARKED
+		//BUTTONS DISABLE IF NOTHING IS MARKED (hide, remove, unmark)
 		removeBtn.setDisable(true);
 		hideBtn.setDisable(true);
 		unmarkAllBtn.setDisable(true);
@@ -219,7 +216,6 @@ public class Main extends Application {
 	private void refreshMap() {
 		mapHolder.getChildren().clear();
 		mapHolder.getChildren().add(image);
-
 		for (Entry<Position, Place> p : searchPos.entrySet()) {
 			mapHolder.getChildren().add(p.getValue());
 		}
@@ -235,11 +231,10 @@ public class Main extends Application {
 	private void storePlace(Place newPlace) {
 		allMarked.add(newPlace);
 		newPlace.getBool().addListener((obs, old, nevv) -> {
-			if (nevv == true) {
+			if (nevv == true)
 				allMarked.add(newPlace);
-			} else if (nevv == false) {
+			else if (nevv == false) 
 				allMarked.remove(newPlace);
-			}
 		});
 
 		searchName.putIfAbsent(newPlace.getName(), new HashSet<Place>());
@@ -317,7 +312,6 @@ public class Main extends Application {
 					try {
 						FileReader file = new FileReader(choosenFile);
 						BufferedReader bufferedFile = new BufferedReader(file);
-
 						String line;
 						try {
 							while ((line = bufferedFile.readLine()) != null)
@@ -385,7 +379,7 @@ public class Main extends Application {
 
 	class SearchPlace implements EventHandler<ActionEvent> {
 		HashSet<Place> results;
-
+		
 		@Override
 		public void handle(ActionEvent event) {
 			unmarkAll();
@@ -426,7 +420,7 @@ public class Main extends Application {
 		@Override
 		public void handle(ActionEvent event) {
 			Iterator<Place> iterator = allMarked.iterator();
-
+			
 			while (iterator.hasNext()) {
 				Place p = iterator.next();
 				iterator.remove();
@@ -448,13 +442,12 @@ public class Main extends Application {
 
 			searchPos.remove(p.getPos());
 			allMarked.remove(p);
-
 			mapHolder.getChildren().remove(p);
 		}
 	}
 
 	class SearchCoordinates implements EventHandler<ActionEvent> {
-
+		@Override
 		public void handle(ActionEvent event) {
 			SearchCoordsWindow search = new SearchCoordsWindow();
 			Optional<ButtonType> anwser = search.showAndWait();
@@ -514,11 +507,10 @@ public class Main extends Application {
 
 	class CreateLocation implements EventHandler<ActionEvent> {
 		private Place newPlace;
-
+		
 		@Override
 		public void handle(ActionEvent event) {
 			mapHolder.setCursor(Cursor.CROSSHAIR);
-
 			if (namedPlace.isSelected()) {
 				mapHolder.setOnMouseClicked(new EventHandler<MouseEvent>() {
 					@Override
