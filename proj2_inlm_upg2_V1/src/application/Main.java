@@ -18,6 +18,8 @@ import javafx.application.Application;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
@@ -53,8 +55,7 @@ public class Main extends Application {
 
 	private Stage primaryStage;
 	private BorderPane root;
-	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn, unmarkAllBtn, generateBtn,
-			markAllBtn;
+	private Button createBtn, searchBtn, hideBtn, removeBtn, coordinatesBtn, hideCategoryBtn, unmarkAllBtn;
 	private RadioButton namedPlace, describedPlace;
 	private TextField textSearch;
 	private ImageView image;
@@ -69,27 +70,7 @@ public class Main extends Application {
 	private HashMap<Position, Place> searchPos = new HashMap<>();
 	private TreeMap<String, HashSet<Place>> searchName = new TreeMap<>();
 	private TreeMap<String, HashSet<Place>> searchCategory = new TreeMap<>();
-	private HashSet<Place> allMarked = new HashSet<>();
-
-	private void generate() {
-		long startTime = System.currentTimeMillis();
-		int amt = 0;
-		int x = (int) map.getWidth();
-		int y = (int) map.getHeight();
-		for (int ix = 0; ix < x; ix++)
-			for (int iy = 0; iy < y; iy++) {
-				amt++;
-				int rnd = (int) (Math.random() + 0.5);
-				if (rnd == 1)
-					storePlace(new NamedPlace(categories.get((int) (Math.random() * 4)), "named", ix, iy));
-				else
-					storePlace(new DescribedPlace(categories.get((int) (Math.random() * 4)), "described", ix, iy,
-							"description"));
-			}
-		long stopTime = System.currentTimeMillis();
-		System.out.println(stopTime - startTime + "s, amt = " + amt);
-		hasChanged.set(true);
-	}
+	private ObservableSet<Place> allMarked = FXCollections.observableSet();
 
 	@Override
 	public void start(Stage primaryStage) {
@@ -97,7 +78,7 @@ public class Main extends Application {
 		setupScene();
 		setupHandlers(primaryStage);
 		setupListeners();
-
+		
 		this.primaryStage = primaryStage;
 		Scene scene = new Scene(root, 600, 400);
 		primaryStage.setScene(scene);
@@ -132,8 +113,6 @@ public class Main extends Application {
 		list = new ListView<String>();
 		hideCategoryBtn = new Button("Hide Category");
 		unmarkAllBtn = new Button("Unmark All");
-		markAllBtn = new Button("Mark All");
-		generateBtn = new Button("    Generate\n(experimental)\n   (CAUTION)");
 	}
 
 	private void setupScene() {
@@ -178,8 +157,7 @@ public class Main extends Application {
 		list.setPrefSize(130, 94);
 		list.setItems(categories);
 
-		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn, unmarkAllBtn, markAllBtn,
-				generateBtn);
+		VBox rightLayout = new VBox(new Label("Categories"), list, hideCategoryBtn, unmarkAllBtn);
 		rightLayout.setAlignment(Pos.CENTER);
 		rightLayout.setSpacing(10);
 		root.setRight(rightLayout);
@@ -204,20 +182,37 @@ public class Main extends Application {
 		list.setOnMouseClicked(new ShowCategory());
 		hideCategoryBtn.setOnAction(new HideCategory());
 		unmarkAllBtn.setOnAction(e -> unmarkAll());
-		markAllBtn.setOnAction(e -> markAll());
-		generateBtn.setOnAction(e -> generate());
 
 		// WINDOW
 		primaryStage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, new ExitApplication());
 	}
 
 	private void setupListeners() {
+		// SAVE DISABLE IF NOTHING HAS CHANGED
 		save.setDisable(true);
 		hasChanged.addListener((obs, old, nevv) -> {
 			if (!hasChanged.get())
 				save.setDisable(true);
 			else
 				save.setDisable(false);
+		});
+
+		// BUTTONS DISABLE IF NOTHING IS MARKED
+		removeBtn.setDisable(false);
+		hideBtn.setDisable(true);
+		unmarkAllBtn.setDisable(true);
+		allMarked.addListener((SetChangeListener<Place>) change -> {
+			if (change.wasRemoved()) {
+				if (allMarked.isEmpty()) {
+					removeBtn.setDisable(true);
+					hideBtn.setDisable(true);
+					unmarkAllBtn.setDisable(true);
+				}
+			} else if (change.wasAdded()) {
+				removeBtn.setDisable(false);
+				hideBtn.setDisable(false);
+				unmarkAllBtn.setDisable(false);
+			}
 		});
 	}
 
@@ -266,12 +261,6 @@ public class Main extends Application {
 				iterator.remove();
 				p.setMarkedProperty(false);
 			}
-		}
-	}
-
-	private void markAll() {
-		for (Entry<Position, Place> p : searchPos.entrySet()) {
-			p.getValue().setMarkedProperty(true);
 		}
 	}
 
